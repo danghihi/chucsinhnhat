@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Phân Tích Thực Thể Siêu Cấp - v10.0.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <!-- Pháo giấy nhẹ nhàng hơn không gây lag -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Montserrat:wght@900&display=swap');
+        
+        :root {
+            --neon-pink: #ff007f;
+            --neon-blue: #00f3ff;
+            --cyber-black: #050505;
+        }
+
+        body { 
+            font-family: 'Space Mono', monospace; 
+            background-color: var(--cyber-black); 
+            color: #00ff41; 
+            overflow: hidden;
+            background-image: linear-gradient(rgba(0, 255, 65, 0.05) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .cyber-glass {
+            background: rgba(0, 20, 0, 0.85);
+            border: 2px solid #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3), inset 0 0 5px rgba(0, 255, 65, 0.2);
+            border-radius: 4px;
+        }
+
+        .hidden-section { display: none; }
+
+        /* Hiệu ứng Scan Camera Troll */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--neon-blue);
+            box-shadow: 0 0 20px var(--neon-blue);
+            animation: scan 2s linear infinite;
+            z-index: 10;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+
+        /* Vòng quay thiết kế lại */
+        .wheel-outer {
+            position: relative;
+            width: 340px;
+            height: 340px;
+            margin: 0 auto;
+            border: 8px solid #333;
+            border-radius: 50%;
+            padding: 5px;
+            background: #111;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+        }
+
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wheel-text {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            height: 50%;
+            transform-origin: bottom center;
+            width: 60px;
+            margin-left: -30px;
+            text-align: center;
+            padding-top: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+        }
+
+        /* Con heo mắt liếc */
+        .pig-eye {
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #000;
+        }
+
+        .pig-pupil {
+            width: 6px;
+            height: 6px;
+            background: black;
+            border-radius: 50%;
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            transition: 0.1s;
+        }
+
+        /* Nút phong cách Terminal */
+        .btn-cyber {
+            background: transparent;
+            border: 1px solid #00ff41;
+            padding: 10px 20px;
+            color: #00ff41;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            transition: 0.3s;
+            overflow: hidden;
+        }
+
+        .btn-cyber:hover {
+            background: #00ff41;
+            color: black;
+            box-shadow: 0 0 20px #00ff41;
+        }
+
+        /* Quảng cáo hài hước */
+        .ad-card {
+            animation: slideIn 0.5s ease-out;
+            border-left: 5px solid #ff007f;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glitch {
+            animation: glitch-anim 0.2s infinite;
+        }
+
+        @keyframes glitch-anim {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        /* Overlay khi camera quét lỗi */
+        .warning-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            color: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- PHẦN 1: LOGIN BẢO MẬT TỐI THƯỢNG -->
+    <div id="section-login" class="cyber-glass p-8 w-full max-w-md text-center">
+        <div class="mb-4 text-xs opacity-50 text-left">[SYSTEM] INITIALIZING SECURITY PROTOCOL...</div>
+        <h1 class="text-3xl font-black mb-8 italic">ACCESS CONTROL</h1>
+        
+        <!-- Pig Monitor -->
+        <div class="mx-auto w-32 h-24 bg-pink-300 rounded-3xl relative mb-8 border-4 border-pink-500">
+            <div class="absolute top-2 left-2 w-10 h-10 bg-pink-400 rounded-full border-4 border-pink-500 -mt-4 -ml-4"></div>
+            <div class="absolute top-2 right-2 w-10 h-10 bg-pink-400 rounded-full border-4 border-pink-500 -mt-4 -mr-4"></div>
+            <div class="flex justify-around pt-6">
+                <div class="pig-eye"><div class="pig-pupil"></div></div>
+                <div class="pig-eye"><div class="pig-pupil"></div></div>
+            </div>
+            <div class="absolute bottom-2 left-1/2 -translate-x-1/2 w-12 h-8 bg-pink-400 rounded-full border-2 border-pink-600 flex justify-center items-center gap-2">
+                <div class="w-2 h-2 bg-pink-800 rounded-full"></div>
+                <div class="w-2 h-2 bg-pink-800 rounded-full"></div>
+            </div>
+        </div>
+
+        <input type="password" id="password" oninput="eyeTrack(event)" class="w-full bg-black border-b-2 border-green-500 p-3 mb-6 focus:outline-none text-center text-xl tracking-tighter" placeholder="Gõ mật khẩu đi bạn hiền...">
+        <button onclick="checkAccess()" class="btn-cyber w-full">DECRYPT ACCESS</button>
+        <div id="login-msg" class="mt-4 text-red-500 text-xs font-bold uppercase"></div>
+    </div>
+
+    <!-- PHẦN 2: CAMERA QUÉT TROLL -->
+    <div id="section-camera" class="hidden-section cyber-glass p-8 w-full max-w-xl text-center relative overflow-hidden">
+        <div class="scan-line"></div>
+        <div id="warning-screen" class="warning-overlay">⚠️</div>
+        <h2 class="text-xl mb-4">[SCANNING TARGET: HOÀNG ANH]</h2>
+        <div class="relative bg-black rounded border-2 border-green-900 mb-6">
+            <video id="video" autoplay playsinline class="w-full h-80 object-cover opacity-70"></video>
+            <canvas id="canvas" class="hidden absolute top-0 left-0 w-full h-full object-cover"></canvas>
+            <div id="scan-labels" class="absolute top-4 left-4 text-left text-[10px] space-y-1">
+                <div>ID: 0x99283-HA</div>
+                <div>OBJ: ORGANIC_PIG_CELLS</div>
+                <div>WEIGHT: ERROR_OVERLOAD</div>
+                <div>IQ: 15% (REDUCING...)</div>
+            </div>
+        </div>
+        <div id="camera-status" class="mb-4 h-6 text-yellow-500 font-bold">ĐANG NHẬN DIỆN THỰC THỂ...</div>
+        <button id="snap-btn" onclick="performTrollScan()" class="btn-cyber px-12">BẮT ĐẦU PHÂN TÍCH</button>
+        <button id="next-to-ads" onclick="showAds()" class="hidden-section btn-cyber w-full mt-4">KẾT QUẢ PHÂN TÍCH <i class="fas fa-microchip"></i></button>
+    </div>
+
+    <!-- PHẦN 3: QUẢNG CÁO SIÊU HÀI HƯỚC -->
+    <div id="section-ads" class="hidden-section cyber-glass p-8 w-full max-w-2xl text-center">
+        <div class="text-xs text-blue-400 mb-2 uppercase tracking-widest font-bold">Quảng cáo độc quyền - Tài trợ bởi "Quỹ Bảo Tồn Động Vật Quý Hiếm"</div>
+        <div id="ad-box" class="min-h-[350px] bg-black/50 p-6 rounded border border-blue-900 flex flex-col items-center justify-center">
+            <!-- Ads content -->
+        </div>
+        <div class="mt-6 flex justify-between items-center">
+            <div id="ad-step" class="text-[10px] opacity-40">STEP [01/10]</div>
+            <button id="ad-btn" onclick="nextFunnyAd()" class="btn-cyber bg-blue-900/20">XEM TIẾP (BẮT BUỘC)</button>
+        </div>
+    </div>
+
+    <!-- PHẦN 4: VÒNG QUAY NHÂN PHẨM (KHÔNG LỘ QUÀ) -->
+    <div id="section-wheel" class="hidden-section cyber-glass p-8 w-full max-w-md text-center">
+        <h2 class="text-2xl font-black mb-8 text-pink-500 glitch">VÒNG QUAY ĐỊNH MỆNH</h2>
+        <div class="wheel-outer">
+            <!-- Kim chỉ -->
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                <i class="fas fa-caret-down text-4xl text-white"></i>
+            </div>
+            <div id="wheel">
+                <!-- Sẽ được Render bằng JS -->
+            </div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full z-10 flex items-center justify-center border-4 border-black">
+                <i class="fas fa-cog fa-spin text-black"></i>
+            </div>
+        </div>
+        <div id="wheel-msg" class="mt-8 text-sm text-gray-400">Đừng hy vọng gì nhiều, Hoàng Anh à...</div>
+        <button id="spin-btn" onclick="startMegaSpin()" class="btn-cyber w-full mt-6 py-4 text-xl">QUAY NGAY</button>
+    </div>
+
+    <!-- PHẦN 5: CHÚC MỪNG & CHUỒNG HEO -->
+    <div id="section-final" class="hidden-section cyber-glass p-8 w-full max-w-lg text-center">
+        <div class="text-6xl mb-6">🎂</div>
+        <h2 class="text-4xl font-black text-pink-500 mb-4 uppercase">Happy Birthday!</h2>
+        <div class="bg-black/50 p-6 border-l-4 border-pink-500 text-left mb-8">
+            <p class="text-gray-300 italic mb-4">"Gửi thực thể mang mã định danh Hoàng Anh. Chúc bạn tuổi mới bớt bướng, bớt béo (khó), và luôn vui vẻ cùng gia đình, bạn bè. Đặc biệt là sớm nhận ra mình thuộc về nơi đâu..."</p>
+            <div class="text-yellow-400 font-bold text-center p-2 border border-dashed border-yellow-500">
+                🎯 KÈO ĐÃ CHỐT: SÁNG MAI LÊN LỚP 10K TIỀN MẶT ĐƯA TẬN TAY!
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="supriseConfetti()" class="btn-cyber py-4"><i class="fas fa-gift"></i> NHẬN QUÀ</button>
+            <button onclick="goToPigStable()" class="btn-cyber py-4 border-pink-500 text-pink-500"><i class="fas fa-home"></i> VỀ CHUỒNG HEO</button>
+        </div>
+    </div>
+
+    <script>
+        // Cấu hình âm thanh
+        const audioPig = new Audio('one-pig-squeaked.mp3');
+        const audioHbd = new Audio('mojihaza-happy-birthday-celebration-happy-birthday-to-you-363137.mp3');
+
+        // Logic Mật khẩu
+        function eyeTrack(e) {
+            const input = e.target;
+            const pupils = document.querySelectorAll('.pig-pupil');
+            const move = Math.min(input.value.length * 2, 10);
+            pupils.forEach(p => p.style.transform = `translateX(${move - 5}px) translateY(2px)`);
+            if(input.value.length > 0) playPig();
+        }
+
+        function playPig() {
+            const s = audioPig.cloneNode();
+            s.volume = 0.3;
+            s.play().catch(()=>{});
+        }
+
+        function checkAccess() {
+            const pw = document.getElementById('password').value;
+            if(pw.toLowerCase() === 'hoanganhbeophi') {
+                showSection('camera');
+                initCamera();
+                speak("Mật khẩu chính xác. Đang khởi tạo hệ thống nhận diện thực thể béo phì.");
+            } else {
+                document.getElementById('login-msg').innerText = "SAI RỒI! HEO KHÔNG THÔNG MINH THẾ ĐÂU!";
+                playPig();
+            }
+        }
+
+        // Logic Camera Troll
+        async function initCamera() {
+            const video = document.getElementById('video');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                document.getElementById('camera-status').innerText = "CAMERA BỊ CHẶN! CHẮC DO HOÀNG ANH QUÁ XẤU?";
+            }
+        }
+
+        function performTrollScan() {
+            const status = document.getElementById('camera-status');
+            const snapBtn = document.getElementById('snap-btn');
+            const warning = document.getElementById('warning-screen');
+            
+            snapBtn.style.display = 'none';
+            status.innerText = "ĐANG PHÂN TÍCH TẾ BÀO MỠ...";
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                if(progress === 30) status.innerText = "CẢNH BÁO: PHÁT HIỆN LƯỢNG MỠ VƯỢT MỨC CHO PHÉP!";
+                if(progress === 50) {
+                    status.innerText = "LỖI HỆ THỐNG: QUÁ NHIỀU GEN HEO TRONG DNA!";
+                    warning.style.opacity = "1";
+                    document.body.classList.add('glitch');
+                }
+                if(progress === 80) status.innerText = "XÁC NHẬN: ĐỐI TƯỢNG CẦN ĐƯỢC ĐƯA VỀ CHUỒNG GẤP!";
+                if(progress >= 100) {
+                    clearInterval(interval);
+                    status.innerText = "PHÂN TÍCH HOÀN TẤT - THỰC THỂ CẦN ĐƯỢC CÁCH LY!";
+                    warning.style.opacity = "0";
+                    document.body.classList.remove('glitch');
+                    document.getElementById('next-to-ads').style.display = 'block';
+                    speak("Cảnh báo. Phát hiện thực thể mang gen heo cấp độ bốn. Đang lập hồ sơ chuyển về chuồng.");
+                }
+            }, 100);
+        }
+
+        // Logic Quảng cáo hài hước (Vô lý nhất có thể)
+        const funnyAds = [
+            { t: "Kính Lúp Hỗ Trợ Tìm IQ", d: "Dành riêng cho Hoàng Anh khi làm bài kiểm tra Toán. Độ phóng đại x1000 vẫn chưa thấy IQ đâu.", b: "MUA NGAY (0đ)" },
+            { t: "Khóa Học Giao Tiếp Với Heo", d: "Giúp bạn hiểu tiếng đồng loại tại chuồng. Giảng viên: Heo Nái kỳ cựu.", b: "HỌC THỬ" },
+            { t: "Thuốc Xịt Tàng Hình Cân Nặng", d: "Xịt vào cân sẽ hiện số 45kg. Lưu ý: Chỉ lừa được cái cân, không lừa được người nhìn.", b: "ĐẶT HÀNG" },
+            { t: "Combo 10 Lượt Ngủ Gật Trong Lớp", d: "Đảm bảo thầy cô đi qua không thấy, bạn bè nhìn vào tưởng đang thiền định.", b: "DÙNG THỬ" },
+            { t: "Bình Xịt Khử Mùi 'Hương Chuồng'", d: "Giúp Hoàng Anh luôn tự tin với mùi hương đặc trưng của nơi mình sinh ra.", b: "HẾT HÀNG" },
+            { t: "Dịch Vụ Cho Thuê Người Yêu... Giả", d: "Gói này không dành cho Hoàng Anh vì bạn có người yêu rồi, xem cho thèm thôi.", b: "CẤM MUA" },
+            { t: "Gói 'Buff' May Mắn Quay Số", d: "Xem nốt quảng cáo này để nhận ngay 100% tỷ lệ trúng tiền thật!", b: "NHẬN BUFF" },
+            { t: "Máy Chế Biến Thức Ăn Thành Không Khí", d: "Giải pháp tối ưu cho cân nặng. Ăn cả thế giới nhưng thực ra là hít gió.", b: "XEM CUỐI" }
+        ];
+
+        let adStep = 0;
+        function renderAd() {
+            const ad = funnyAds[adStep];
+            const box = document.getElementById('ad-box');
+            box.innerHTML = `
+                <div class="ad-card text-center">
+                    <div class="text-4xl mb-4">📢</div>
+                    <h3 class="text-2xl font-bold text-blue-400 mb-2">${ad.t}</h3>
+                    <p class="text-sm text-gray-400 mb-6 italic">"${ad.d}"</p>
+                    <button class="btn-cyber text-xs border-blue-500 text-blue-500">${ad.b}</button>
+                </div>
+            `;
+            document.getElementById('ad-step').innerText = `STEP [0${adStep + 1}/08]`;
+            speak(ad.t + ". " + ad.d);
+        }
+
+        function showAds() {
+            showSection('ads');
+            renderAd();
+        }
+
+        function nextFunnyAd() {
+            adStep++;
+            if(adStep < funnyAds.length) {
+                renderAd();
+            } else {
+                showSection('wheel');
+                speak("Quảng cáo kết thúc. Đã đến lúc nhận quả báo... à nhầm quà báo.");
+            }
+        }
+
+        // Logic Vòng quay (Bảo mật - Không lộ trước)
+        const prizes = ["10.000đ TIỀN THẬT", "MỘT CÁI NỊT", "LỜI CHÚC VIP", "NHẬN 1 CÁI TÁT", "10.000đ TIỀN THẬT", "MỘT TRÀNG PHÁO TAY", "THÊM 100KG", "BỊ CHỬI"];
+        const colors = ["#ff007f", "#111", "#00f3ff", "#222", "#ff007f", "#333", "#00ff41", "#444"];
+
+        function initWheel() {
+            const w = document.getElementById('wheel');
+            const deg = 360 / prizes.length;
+            prizes.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = "wheel-text";
+                div.style.transform = `rotate(${i * deg}deg)`;
+                div.style.background = colors[i];
+                div.style.border = "1px solid rgba(255,255,255,0.1)";
+                div.innerHTML = p.split(' ').join('<br>');
+                w.appendChild(div);
+            });
+            // Background vòng quay bằng Conic Gradient cho đẹp
+            let grad = colors.map((c, i) => `${c} ${i*deg}deg ${(i+1)*deg}deg`).join(', ');
+            w.style.background = `conic-gradient(${grad})`;
+        }
+        initWheel();
+
+        let spinning = false;
+        function startMegaSpin() {
+            if(spinning) return;
+            spinning = true;
+            const w = document.getElementById('wheel');
+            const msg = document.getElementById('wheel-msg');
+            
+            // Ép trúng 10k (index 0 hoặc 4)
+            // Quay 5 vòng + dừng ở ô 0 (góc 360 - 22.5)
+            const stopDeg = 360 * 8 + 337.5; 
+            w.style.transform = `rotate(${stopDeg}deg)`;
+            msg.innerText = "HỒI HỘP QUÁ... ÔI TRỜI ƠI...";
+            
+            let tick = 0;
+            const tInt = setInterval(() => {
+                playPig();
+                tick++;
+                if(tick > 30) clearInterval(tInt);
+            }, 150);
+
+            setTimeout(() => {
+                msg.innerText = "KHÔNG THỂ TIN ĐƯỢC!!! BẠN ĐÃ TRÚNG 10.000đ TIỀN MẶT!";
+                msg.classList.add('text-yellow-400', 'font-bold', 'text-xl');
+                speak("Chúc mừng Hoàng Anh đã trúng mười nghìn đồng tiền mặt. Sáng mai lên lớp nhớ đòi quà nhé. Tao thề là tao sẽ đưa.");
+                supriseConfetti();
+                
+                setTimeout(() => showSection('final'), 6000);
+            }, 6500);
+        }
+
+        // Logic Pháo giấy & Final
+        function supriseConfetti() {
+            // Cấu hình pháo giấy nhẹ nhàng, không lag
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ff007f', '#00f3ff', '#00ff41']
+            });
+            audioHbd.play().catch(()=>{});
+        }
+
+        function goToPigStable() {
+            speak("Hệ thống đang định vị chuồng heo gần nhất. Vui lòng chuẩn bị tinh thần để về nhà.");
+            // Nút này bây giờ hoạt động thực sự: Hiển thị hiệu ứng chuyển hướng ảo
+            document.body.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-screen bg-black text-white text-center p-10">
+                    <i class="fas fa-truck-loading text-6xl mb-6 fa-bounce"></i>
+                    <h1 class="text-3xl font-bold mb-4">ĐANG VẬN CHUYỂN HOÀNG ANH...</h1>
+                    <p class="text-gray-400">Đích đến: Chuồng heo Phùng Khoang (hoặc nơi gần nhất)</p>
+                    <div class="w-full max-w-md bg-gray-800 h-4 mt-8 rounded-full overflow-hidden">
+                        <div class="bg-pink-500 h-full animate-[progress_10s_linear_forwards]" style="width:0%"></div>
+                    </div>
+                    <style>@keyframes progress { to { width: 100%; } }</style>
+                    <p class="mt-4 animate-pulse">Vui lòng không tắt trình duyệt cho đến khi thấy máng ăn...</p>
+                </div>
+            `;
+            setTimeout(() => {
+                window.location.href = "https://www.google.com/search?q=chuồng+heo+gần+nhất";
+            }, 5000);
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden-section'));
+            document.getElementById(`section-${id}`).classList.remove('hidden-section');
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'vi-VN';
+                msg.rate = 1;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+    </script>
+</body>
+</html>
